@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { isWorkspaceProtocol, getDependencies, type PackageJson } from "./package-json.js";
+import { isWorkspaceProtocol, getDependencies } from "./package-json.js";
+import type { PackageJson } from "./packages.js";
 
 describe("isWorkspaceProtocol", () => {
   it("should detect workspace:* protocol", () => {
