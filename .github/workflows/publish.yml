@@ -5,6 +5,10 @@ on:
     tags:
       - "*.*.*"
 
+permissions:
+  id-token: write  # Required for OIDC
+  contents: read
+
 jobs:
   publish:
     runs-on: ubuntu-latest
@@ -25,7 +29,7 @@ jobs:
         with:
           node-version: "22"
           cache: "pnpm"
-          registry-url: "https://npm.pkg.github.com"
+          registry-url: "https://registry.npmjs.org/"
           scope: "@emdzej"
 
       - name: Install dependencies
@@ -33,11 +37,7 @@ jobs:
 
       - name: Build
         run: pnpm build
-
-      - name: Set version from tag
-        run: npm version ${{ github.ref_name }} --no-git-tag-version
-
-      - name: Publish to GitHub Packages
-        run: pnpm publish --no-git-checks
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Publish to npm
+        run: pnpm publish --no-git-checks --access=public
+        
