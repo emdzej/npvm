@@ -1,4 +1,4 @@
-import { execSync } from "node:child_process";
+import { simpleGit, SimpleGit, TagResult } from "simple-git";
 import * as semver from "semver";
 
 export interface TagOptions {
@@ -15,28 +15,13 @@ export interface VersionTag {
   tag: string;
   /** Parsed semver version */
   version: string;
-  /** Commit SHA */
-  sha: string;
 }
 
 /**
- * Execute git command and return stdout
+ * Create simple-git instance
  */
-function git(args: string, cwd?: string): string {
-  try {
-    return execSync(`git ${args}`, {
-      cwd,
-      encoding: "utf-8",
-      stdio: ["pipe", "pipe", "pipe"],
-    }).trim();
-  } catch (error) {
-    const err = error as { status?: number; stderr?: Buffer };
-    if (err.status === 128) {
-      // Git error (e.g., not a repo, no commits)
-      return "";
-    }
-    throw error;
-  }
+function getGit(cwd?: string): SimpleGit {
+  return simpleGit(cwd || process.cwd());
 }
 
 /**
@@ -51,26 +36,22 @@ export function parseTagVersion(tag: string, prefix: string = ""): string | null
 /**
  * List all version tags in the repository
  */
-export function listVersionTags(options: TagOptions = {}): VersionTag[] {
+export async function listVersionTags(options: TagOptions = {}): Promise<VersionTag[]> {
   const { prefix = "", cwd } = options;
-  const pattern = prefix ? `${prefix}*` : "*";
+  const git = getGit(cwd);
 
-  // Get all tags with their commit SHAs
-  const output = git(`tag -l "${pattern}" --format="%(refname:short) %(objectname:short)"`, cwd);
-
-  if (!output) {
-    return [];
-  }
-
+  const result: TagResult = await git.tags();
   const tags: VersionTag[] = [];
 
-  for (const line of output.split("\n")) {
-    const [tag, sha] = line.split(" ");
-    if (!tag || !sha) continue;
+  for (const tag of result.all) {
+    // Filter by prefix if specified
+    if (prefix && !tag.startsWith(prefix)) {
+      continue;
+    }
 
     const version = parseTagVersion(tag, prefix);
     if (version) {
-      tags.push({ tag, version, sha });
+      tags.push({ tag, version });
     }
   }
 
@@ -81,68 +62,64 @@ export function listVersionTags(options: TagOptions = {}): VersionTag[] {
 /**
  * Get the latest version tag
  */
-export function getLatestTag(options: TagOptions = {}): VersionTag | null {
-  const tags = listVersionTags(options);
+export async function getLatestTag(options: TagOptions = {}): Promise<VersionTag | null> {
+  const tags = await listVersionTags(options);
   return tags.length > 0 ? tags[0] : null;
 }
 
 /**
  * Get the latest version tag reachable from a specific branch
  */
-export function getLatestTagOnBranch(options: TagOptions = {}): VersionTag | null {
+export async function getLatestTagOnBranch(options: TagOptions = {}): Promise<VersionTag | null> {
   const { prefix = "", branch = "main", cwd } = options;
+  const git = getGit(cwd);
 
-  // Get all tags reachable from the branch
-  const output = git(`tag --merged ${branch} -l "${prefix || ""}*"`, cwd);
+  try {
+    // Get tags merged into the branch
+    const result = await git.tag(["--merged", branch, "-l", `${prefix}*`]);
+    const tagNames = result.trim().split("\n").filter(Boolean);
 
-  if (!output) {
-    return null;
-  }
-
-  const tagNames = output.split("\n").filter(Boolean);
-  const tags: VersionTag[] = [];
-
-  for (const tag of tagNames) {
-    const version = parseTagVersion(tag, prefix);
-    if (version) {
-      const sha = git(`rev-parse --short "${tag}^{}"`, cwd);
-      tags.push({ tag, version, sha });
+    const tags: VersionTag[] = [];
+    for (const tag of tagNames) {
+      const version = parseTagVersion(tag, prefix);
+      if (version) {
+        tags.push({ tag, version });
+      }
     }
-  }
 
-  // Sort by semver descending and return the latest
-  tags.sort((a, b) => semver.rcompare(a.version, b.version));
-  return tags.length > 0 ? tags[0] : null;
-}
-
-/**
- * Check if current HEAD has a version tag
- */
-export function getCurrentTag(options: TagOptions = {}): VersionTag | null {
-  const { prefix = "", cwd } = options;
-
-  const output = git("describe --tags --exact-match HEAD 2>/dev/null || true", cwd);
-
-  if (!output) {
+    // Sort by semver descending and return the latest
+    tags.sort((a, b) => semver.rcompare(a.version, b.version));
+    return tags.length > 0 ? tags[0] : null;
+  } catch {
+    // If branch doesn't exist or no tags, return null
     return null;
   }
-
-  const version = parseTagVersion(output, prefix);
-  if (!version) {
-    return null;
-  }
-
-  const sha = git("rev-parse --short HEAD", cwd);
-  return { tag: output, version, sha };
 }
 
 /**
  * Create a new version tag
  */
-export function createTag(version: string, options: TagOptions = {}): string {
-  const { prefix = "", cwd } = options;
+export async function createTag(
+  version: string,
+  options: TagOptions & { message?: string } = {}
+): Promise<string> {
+  const { prefix = "", message, cwd } = options;
+  const git = getGit(cwd);
   const tag = `${prefix}${version}`;
 
-  git(`tag "${tag}"`, cwd);
+  if (message) {
+    await git.addAnnotatedTag(tag, message);
+  } else {
+    await git.addTag(tag);
+  }
+
   return tag;
+}
+
+/**
+ * Push tags to remote
+ */
+export async function pushTags(remote: string = "origin", cwd?: string): Promise<void> {
+  const git = getGit(cwd);
+  await git.pushTags(remote);
 }

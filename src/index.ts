@@ -28,7 +28,7 @@ program
 
     try {
       if (options.verbose || options.format === "json") {
-        const info = getVersionInfo(versionOpts);
+        const info = await getVersionInfo(versionOpts);
 
         if (options.format === "json") {
           console.log(JSON.stringify({
@@ -45,15 +45,15 @@ program
           console.log(`  Bump type:    ${chalk.yellow(info.bumpType)}`);
           console.log(`  Commits:      ${info.commitCount}`);
           if (info.latestTag) {
-            console.log(`  Latest tag:   ${info.latestTag.tag} (${info.latestTag.sha})`);
+            console.log(`  Latest tag:   ${info.latestTag.tag}`);
           } else {
             console.log(`  Latest tag:   ${chalk.dim("none")}`);
           }
         }
       } else {
         const version = options.next
-          ? getNextVersion(versionOpts)
-          : getCurrentVersion(versionOpts);
+          ? await getNextVersion(versionOpts)
+          : await getCurrentVersion(versionOpts);
         console.log(version);
       }
     } catch (error) {

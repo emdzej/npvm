@@ -1,10 +1,10 @@
-import { execSync } from "node:child_process";
+import { simpleGit, SimpleGit, LogResult, DefaultLogFields } from "simple-git";
 
 export type BumpType = "major" | "minor" | "patch" | "none";
 
 export interface Commit {
-  /** Short commit SHA */
-  sha: string;
+  /** Commit SHA */
+  hash: string;
   /** Commit message (first line) */
   message: string;
   /** Full commit body */
@@ -19,22 +19,10 @@ export interface CommitOptions {
 }
 
 /**
- * Execute git command and return stdout
+ * Create simple-git instance
  */
-function git(args: string, cwd?: string): string {
-  try {
-    return execSync(`git ${args}`, {
-      cwd,
-      encoding: "utf-8",
-      stdio: ["pipe", "pipe", "pipe"],
-    }).trim();
-  } catch (error) {
-    const err = error as { status?: number };
-    if (err.status === 128) {
-      return "";
-    }
-    throw error;
-  }
+function getGit(cwd?: string): SimpleGit {
+  return simpleGit(cwd || process.cwd());
 }
 
 /**
@@ -67,79 +55,62 @@ export function parseConventionalCommit(message: string, body?: string): BumpTyp
     case "perf":
       return "patch";
     default:
-      // Other types (docs, style, refactor, test, chore, etc.) don't bump
       return "none";
   }
 }
 
 /**
+ * Convert simple-git log entry to our Commit format
+ */
+function toCommit(entry: DefaultLogFields): Commit {
+  const message = entry.message;
+  const body = entry.body || undefined;
+  const bumpType = parseConventionalCommit(message, body);
+
+  return {
+    hash: entry.hash,
+    message,
+    body,
+    bumpType,
+  };
+}
+
+/**
  * Get commits since a specific ref (tag or commit)
  */
-export function getCommitsSince(ref: string, options: CommitOptions = {}): Commit[] {
+export async function getCommitsSince(ref: string, options: CommitOptions = {}): Promise<Commit[]> {
   const { cwd } = options;
+  const git = getGit(cwd);
 
-  // Format: SHA|subject|body (separated by NULL)
-  const format = "%h|%s|%b%x00";
-  const output = git(`log ${ref}..HEAD --format="${format}"`, cwd);
-
-  if (!output) {
+  try {
+    const log: LogResult = await git.log({ from: ref, to: "HEAD" });
+    return log.all.map(toCommit);
+  } catch {
     return [];
   }
-
-  const commits: Commit[] = [];
-
-  // Split by NULL character
-  const entries = output.split("\x00").filter(Boolean);
-
-  for (const entry of entries) {
-    const [sha, message, ...bodyParts] = entry.split("|");
-    if (!sha || !message) continue;
-
-    const body = bodyParts.join("|").trim() || undefined;
-    const bumpType = parseConventionalCommit(message, body);
-
-    commits.push({ sha, message, body, bumpType });
-  }
-
-  return commits;
 }
 
 /**
  * Get all commits (when no tags exist)
  */
-export function getAllCommits(options: CommitOptions = {}): Commit[] {
+export async function getAllCommits(options: CommitOptions = {}): Promise<Commit[]> {
   const { cwd } = options;
+  const git = getGit(cwd);
 
-  const format = "%h|%s|%b%x00";
-  const output = git(`log --format="${format}"`, cwd);
-
-  if (!output) {
+  try {
+    const log: LogResult = await git.log();
+    return log.all.map(toCommit);
+  } catch {
     return [];
   }
-
-  const commits: Commit[] = [];
-  const entries = output.split("\x00").filter(Boolean);
-
-  for (const entry of entries) {
-    const [sha, message, ...bodyParts] = entry.split("|");
-    if (!sha || !message) continue;
-
-    const body = bodyParts.join("|").trim() || undefined;
-    const bumpType = parseConventionalCommit(message, body);
-
-    commits.push({ sha, message, body, bumpType });
-  }
-
-  return commits;
 }
 
 /**
  * Count commits since a specific ref
  */
-export function countCommitsSince(ref: string, options: CommitOptions = {}): number {
-  const { cwd } = options;
-  const output = git(`rev-list --count ${ref}..HEAD`, cwd);
-  return output ? parseInt(output, 10) : 0;
+export async function countCommitsSince(ref: string, options: CommitOptions = {}): Promise<number> {
+  const commits = await getCommitsSince(ref, options);
+  return commits.length;
 }
 
 /**
@@ -167,16 +138,22 @@ export function getHighestBumpType(commits: Commit[]): BumpType {
 /**
  * Get current branch name
  */
-export function getCurrentBranch(options: CommitOptions = {}): string | null {
+export async function getCurrentBranch(options: CommitOptions = {}): Promise<string | null> {
   const { cwd } = options;
-  const output = git("rev-parse --abbrev-ref HEAD", cwd);
-  return output || null;
+  const git = getGit(cwd);
+
+  try {
+    const branch = await git.revparse(["--abbrev-ref", "HEAD"]);
+    return branch.trim() || null;
+  } catch {
+    return null;
+  }
 }
 
 /**
  * Check if HEAD is detached
  */
-export function isDetachedHead(options: CommitOptions = {}): boolean {
-  const branch = getCurrentBranch(options);
+export async function isDetachedHead(options: CommitOptions = {}): Promise<boolean> {
+  const branch = await getCurrentBranch(options);
   return branch === "HEAD";
 }

@@ -4,7 +4,6 @@ import {
   getCommitsSince,
   getAllCommits,
   getHighestBumpType,
-  countCommitsSince,
   type BumpType,
   type Commit,
 } from "./commits.js";
@@ -41,9 +40,7 @@ export function calculateNextVersion(
   commitCount?: number
 ): string {
   if (bumpType === "none") {
-    // No version bump needed
     if (preRelease && commitCount !== undefined) {
-      // But if pre-release requested, bump patch and add pre-release
       const next = semver.inc(current, "patch");
       return `${next}-${preRelease}.${commitCount}`;
     }
@@ -65,31 +62,24 @@ export function calculateNextVersion(
 /**
  * Get full version information for the repository
  */
-export function getVersionInfo(options: VersionOptions = {}): VersionInfo {
+export async function getVersionInfo(options: VersionOptions = {}): Promise<VersionInfo> {
   const { defaultVersion = "0.0.0", preRelease, cwd } = options;
 
-  // Get latest tag
-  const latestTag = getLatestTagOnBranch(options);
+  const latestTag = await getLatestTagOnBranch(options);
 
   let current: string;
   let commits: Commit[];
-  let commitCount: number;
 
   if (latestTag) {
     current = latestTag.version;
-    commits = getCommitsSince(latestTag.tag, { cwd });
-    commitCount = countCommitsSince(latestTag.tag, { cwd });
+    commits = await getCommitsSince(latestTag.tag, { cwd });
   } else {
-    // No tags exist - start from default version
     current = defaultVersion;
-    commits = getAllCommits({ cwd });
-    commitCount = commits.length;
+    commits = await getAllCommits({ cwd });
   }
 
-  // Determine bump type from commits
+  const commitCount = commits.length;
   const bumpType = getHighestBumpType(commits);
-
-  // Calculate next version
   const next = calculateNextVersion(current, bumpType, preRelease, commitCount);
 
   return {
@@ -105,17 +95,17 @@ export function getVersionInfo(options: VersionOptions = {}): VersionInfo {
 /**
  * Get current version (from latest tag or default)
  */
-export function getCurrentVersion(options: VersionOptions = {}): string {
+export async function getCurrentVersion(options: VersionOptions = {}): Promise<string> {
   const { defaultVersion = "0.0.0" } = options;
-  const latestTag = getLatestTagOnBranch(options);
+  const latestTag = await getLatestTagOnBranch(options);
   return latestTag ? latestTag.version : defaultVersion;
 }
 
 /**
  * Get next version based on commits
  */
-export function getNextVersion(options: VersionOptions = {}): string {
-  const info = getVersionInfo(options);
+export async function getNextVersion(options: VersionOptions = {}): Promise<string> {
+  const info = await getVersionInfo(options);
   return info.next;
 }
 
