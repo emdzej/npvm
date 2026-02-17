@@ -1,6 +1,6 @@
-# npmx
+# npvm
 
-**Node Package Manager Extended** — CLI for monorepo versioning.
+**Node Package Version Manager** — CLI for monorepo versioning.
 
 Inspired by [axion-release-plugin](https://github.com/allegro/axion-release-plugin).
 
@@ -13,54 +13,54 @@ Inspired by [axion-release-plugin](https://github.com/allegro/axion-release-plug
 ## Installation
 
 ```bash
-npm install -g npmx
+npm install -g npvm
 # or
-pnpm add -g npmx
+pnpm add -g npvm
 # or
-yarn global add npmx
+yarn global add npvm
 ```
 
 ## Quick Start
 
 ```bash
 # Check current/next version
-npmx version
-npmx version --next
+npvm version
+npvm version --next
 
 # Release new version
-npmx release --commit --tag --push
+npvm release --commit --tag --push
 
 # Sync workspace dependencies
-npmx sync
+npvm sync
 ```
 
 ## Commands
 
-### `npmx version`
+### `npvm version`
 
 Determine and display version from git tags/commits.
 
 ```bash
 # Show current version (from latest tag, or 0.0.0 if none)
-npmx version
+npvm version
 
 # Show next version based on commits since last tag
-npmx version --next
+npvm version --next
 
 # Verbose output with commit list
-npmx version --verbose
+npvm version --verbose
 
 # JSON output for scripting
-npmx version --format json
+npvm version --format json
 
 # Custom tag prefix (if your tags are v1.0.0 instead of 1.0.0)
-npmx version --tag-prefix v
+npvm version --tag-prefix v
 
 # Check specific branch
-npmx version --branch develop
+npvm version --branch develop
 
 # Pre-release version
-npmx version --next --pre-release alpha
+npvm version --next --pre-release alpha
 # Output: 1.1.0-alpha.5
 ```
 
@@ -75,25 +75,25 @@ npmx version --next --pre-release alpha
 | `--format <format>` | Output format: `plain`, `json` | `plain` |
 | `--verbose` | Show detailed information | - |
 
-### `npmx release`
+### `npvm release`
 
 Update all package versions in workspace.
 
 ```bash
 # Release with git-calculated version
-npmx release
+npvm release
 
 # Set specific version
-npmx release --version 1.2.3
+npvm release --version 1.2.3
 
 # Full release workflow
-npmx release --commit --tag --push
+npvm release --commit --tag --push
 
 # Pre-release
-npmx release --pre-release beta
+npvm release --pre-release beta
 
 # Preview changes without modifying files
-npmx release --dry-run
+npvm release --dry-run
 ```
 
 #### Options
@@ -109,16 +109,16 @@ npmx release --dry-run
 | `--push` | Push to remote | - |
 | `--dry-run` | Preview changes | - |
 
-### `npmx sync`
+### `npvm sync`
 
 Sync workspace package dependencies to current versions.
 
 ```bash
 # Sync all dependencies
-npmx sync
+npvm sync
 
 # Preview changes
-npmx sync --dry-run
+npvm sync --dry-run
 ```
 
 #### Options
@@ -137,7 +137,7 @@ npmx sync --dry-run
 
 ### Version Detection
 
-npmx uses [conventional commits](https://www.conventionalcommits.org/) to determine version bumps:
+npvm uses [conventional commits](https://www.conventionalcommits.org/) to determine version bumps:
 
 | Commit Type | Version Bump |
 |-------------|--------------|
@@ -150,21 +150,21 @@ npmx uses [conventional commits](https://www.conventionalcommits.org/) to determ
 
 ```bash
 # 1. Check what version will be released
-npmx version --next --verbose
+npvm version --next --verbose
 
 # 2. Preview release
-npmx release --dry-run --commit --tag
+npvm release --dry-run --commit --tag
 
 # 3. Execute release
-npmx release --commit --tag --push
+npvm release --commit --tag --push
 
 # 4. Sync any workspace dependencies
-npmx sync
+npvm sync
 ```
 
 ## Workspace Support
 
-npmx automatically detects workspace configuration:
+npvm automatically detects workspace configuration:
 
 | Package Manager | Config File |
 |-----------------|-------------|
@@ -176,7 +176,7 @@ npmx automatically detects workspace configuration:
 
 ### No tags found
 
-If `npmx version` shows `0.0.0`, you haven't created any version tags yet:
+If `npvm version` shows `0.0.0`, you haven't created any version tags yet:
 
 ```bash
 # Create initial tag
@@ -186,10 +186,10 @@ git push --tags
 
 ### Wrong branch
 
-By default, npmx checks the `main` branch. Use `--branch` to specify a different branch:
+By default, npvm checks the `main` branch. Use `--branch` to specify a different branch:
 
 ```bash
-npmx version --branch develop
+npvm version --branch develop
 ```
 
 ### Pre-release versions
@@ -197,7 +197,7 @@ npmx version --branch develop
 For alpha/beta releases:
 
 ```bash
-npmx release --pre-release alpha --commit --tag
+npvm release --pre-release alpha --commit --tag
 # Creates: 1.1.0-alpha.5 (where 5 is commits since last tag)
 ```
 

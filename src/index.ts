@@ -5,8 +5,8 @@ import { createVersionCommand, createReleaseCommand, createSyncCommand } from ".
 const program = new Command();
 
 program
-  .name("npmx")
-  .description("Node Package Manager Extended - CLI for monorepo versioning")
+  .name("npvm")
+  .description("Node Package Version Manager - CLI for monorepo versioning")
   .version("0.0.0");
 
 // Add commands

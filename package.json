@@ -1,7 +1,7 @@
 {
-  "name": "npmx",
+  "name": "npvm",
   "version": "0.0.0",
-  "description": "Node Package Manager Extended - CLI for monorepo versioning",
+  "description": "Node Package Version Manager - CLI for monorepo versioning",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
