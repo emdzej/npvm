@@ -6,9 +6,9 @@ Inspired by [axion-release-plugin](https://github.com/allegro/axion-release-plug
 
 ## Features
 
-- 📋 **Git-based versioning** — determine version from commits/tags using conventional commits
-- 🔄 **Workspace version sync** — update all package versions in monorepo
-- 🔗 **Dependency updates** — sync inter-package dependencies automatically
+- **Git-based versioning** — determine version from commits/tags using conventional commits
+- **Workspace version sync** — update all package versions in monorepo
+- **Dependency updates** — sync inter-package dependencies automatically
 
 ## Installation
 
