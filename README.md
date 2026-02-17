@@ -13,11 +13,11 @@ Inspired by [axion-release-plugin](https://github.com/allegro/axion-release-plug
 ## Installation
 
 ```bash
-npm install -g npvm
+npm install -g @emdzej/npvm
 # or
-pnpm add -g npvm
+pnpm add -g @emdzej/npvm
 # or
-yarn global add npvm
+yarn global add @emdzej/npvm
 ```
 
 ## Quick Start
