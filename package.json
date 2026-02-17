@@ -1,6 +1,6 @@
 {
   "name": "@emdzej/npvm",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Node Package Version Manager - CLI for monorepo versioning",
   "type": "module",
   "main": "dist/index.js",
@@ -32,7 +32,7 @@
     "url": "https://github.com/emdzej/npvm.git"
   },
   "publishConfig": {
-    "registry": "https://npm.pkg.github.com"
+    "registry": "https://registry.npmjs.org/"
   },
   "dependencies": {
     "chalk": "^5.3.0",
