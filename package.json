@@ -1,6 +1,6 @@
 {
   "name": "@emdzej/npvm",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Node Package Version Manager - CLI for monorepo versioning",
   "type": "module",
   "main": "dist/index.js",
